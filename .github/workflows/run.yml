@@ -2,11 +2,6 @@ name: Run
 
 on:
   workflow_dispatch:
-    inputs:
-      ipa:
-        description: "Direct URL to IPA file"
-        required: true
-        default: "https://github.com/purellarohith/carplayify/releases/download/v1.0/app.ipa"
 
 jobs:
   run:
@@ -14,19 +9,24 @@ jobs:
 
     steps:
       - name: Resign with entitlements
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Download entitlements file and ldid
           curl -fL -O https://raw.githubusercontent.com/itsnebulalol/carplayify/main/ents.plist
           curl -fL -o ${{ github.workspace }}/ldid https://github.com/permasigner/ldid/releases/latest/download/ldid_linux_x86_64
           chmod +x ${{ github.workspace }}/ldid
           
-          # Download the IPA file with HTTP failure checks (-f)
-          echo "Downloading IPA..."
-          curl -fL -o ${{ github.workspace }}/app.ipa "${{ github.event.inputs.ipa }}"
+          # Automatically download the latest release IPA using GitHub CLI
+          echo "Fetching latest release IPA..."
+          gh release download --repo purellarohith/carplayify --pattern "*.ipa" --dir ${{ github.workspace }} --clobber
+          
+          # Rename the downloaded IPA file to app.ipa
+          mv ${{ github.workspace }}/*.ipa ${{ github.workspace }}/app.ipa
           
           # Verify that the downloaded file is a valid zip archive
           if ! unzip -t ${{ github.workspace }}/app.ipa > /dev/null 2>&1; then
-            echo "Error: The downloaded file is not a valid zip/IPA archive. Check that the provided URL is a direct asset link."
+            echo "Error: The downloaded file is not a valid zip/IPA archive."
             file ${{ github.workspace }}/app.ipa
             exit 1
           fi
