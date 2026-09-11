@@ -17,17 +17,31 @@ jobs:
           curl -fL -o ${{ github.workspace }}/ldid https://github.com/permasigner/ldid/releases/latest/download/ldid_linux_x86_64
           chmod +x ${{ github.workspace }}/ldid
           
-          # Automatically download the latest release IPA using GitHub CLI
+          # Download the latest release IPA using GitHub CLI
           echo "Fetching latest release IPA..."
-          gh release download --repo purellarohith/carplayify --pattern "*.ipa" --dir ${{ github.workspace }} --clobber
+          gh release download --repo purellarohith/carplayify --pattern "*.ipa" --dir ${{ github.workspace }} --clobber || true
           
-          # Rename the downloaded IPA file to app.ipa
-          mv ${{ github.workspace }}/*.ipa ${{ github.workspace }}/app.ipa
-          
-          # Verify that the downloaded file is a valid zip archive
+          # List downloaded files for debugging
+          echo "Downloaded files:"
+          ls -la ${{ github.workspace }}
+
+          # Find and assign the IPA file dynamically
+          IPA_FILE=$(find ${{ github.workspace }} -maxdepth 1 -name "*.ipa" | head -n 1)
+
+          if [ -z "$IPA_FILE" ]; then
+            echo "Error: No .ipa file was found or downloaded from the latest release."
+            exit 1
+          fi
+
+          mv "$IPA_FILE" ${{ github.workspace }}/app.ipa
+
+          # Inspect the file header
+          echo "File type analysis:"
+          file ${{ github.workspace }}/app.ipa
+
+          # Verify zip archive integrity
           if ! unzip -t ${{ github.workspace }}/app.ipa > /dev/null 2>&1; then
-            echo "Error: The downloaded file is not a valid zip/IPA archive."
-            file ${{ github.workspace }}/app.ipa
+            echo "Error: Downloaded file is not a valid zip archive."
             exit 1
           fi
 
