@@ -12,26 +12,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Download entitlements file and ldid
+          # Download entitlements file and ldid tool
           curl -fL -O https://raw.githubusercontent.com/itsnebulalol/carplayify/main/ents.plist
           curl -fL -o ${{ github.workspace }}/ldid https://github.com/permasigner/ldid/releases/latest/download/ldid_linux_x86_64
           chmod +x ${{ github.workspace }}/ldid
           
-          # Download the latest IPA from the source repository
-          echo "Fetching latest release IPA..."
-          gh release download --repo itsnebulalol/carplayify --pattern "*.ipa" --dir ${{ github.workspace }} --clobber
+          # Download the IPA from your repository's latest release
+          echo "Fetching latest release IPA from purellarohith/carplayify..."
+          gh release download --repo purellarohith/carplayify --pattern "*.ipa" --dir ${{ github.workspace }} --clobber
           
-          # Rename the downloaded IPA file to app.ipa
+          # Rename the downloaded file to app.ipa
           mv ${{ github.workspace }}/*.ipa ${{ github.workspace }}/app.ipa
           
-          # Verify zip archive integrity
+          # Verify that the downloaded file is a valid zip archive
           if ! unzip -t ${{ github.workspace }}/app.ipa > /dev/null 2>&1; then
-            echo "Error: Downloaded file is not a valid zip archive."
+            echo "Error: Downloaded file is not a valid zip/IPA archive."
             file ${{ github.workspace }}/app.ipa
             exit 1
           fi
 
-          # Extract and re-sign
+          # Extract, sign entitlements, and repackage
           mkdir -p ${{ github.workspace }}/ipa
           unzip ${{ github.workspace }}/app.ipa -d ${{ github.workspace }}/ipa
 
